@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>等一下要吃什麼？ - 美食決策助手</title>
+  <style>
+    /* ===== 簡約現代風 全局樣式 ===== */
+    :root {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-light: #e0e7ff;
+      --danger: #ef4444;
+      --danger-light: #fee2e2;
+      --success: #10b981;
+      --success-light: #d1fae5;
+      --border-color: #e2e8f0;
+      --radius-lg: 16px;
+      --radius-md: 10px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; padding: 20px 12px; display: flex; justify-content: center; }
+    .app-container { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 20px; }
+
+    header { text-align: center; margin-bottom: 5px; }
+    header h1 { font-size: 1.8rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em; }
+    header p { color: var(--text-muted); font-size: 0.95rem; margin-top: 4px; }
+
+    .card { background: var(--card-bg); border-radius: var(--radius-lg); border: 1px solid var(--border-color); padding: 20px; box-shadow: var(--shadow-sm); }
+    .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: var(--text-main); }
+
+    .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    @media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group.full { grid-column: 1 / -1; }
+    label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    input[type="text"], input[type="number"], input[type="time"], select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 0.95rem; background: #fff; color: var(--text-main); outline: none; transition: all 0.2s;
+    }
+    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-light); }
+    
+    .btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 18px; font-size: 0.95rem; font-weight: 600; border-radius: var(--radius-md); border: none; cursor: pointer; transition: all 0.2s; gap: 6px; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #f1f5f9; color: var(--text-main); border: 1px solid var(--border-color); }
+    .btn-secondary:hover { background: #e2e8f0; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+
+    .tabs { display: flex; background: #e2e8f0; padding: 4px; border-radius: var(--radius-md); gap: 4px; }
+    .tab-btn { flex: 1; padding: 10px; text-align: center; border: none; background: transparent; font-weight: 600; font-size: 0.95rem; color: var(--text-muted); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .tab-btn.active { background: #fff; color: var(--primary); box-shadow: var(--shadow-sm); }
+    .tab-content { display: none; margin-top: 10px; }
+    .tab-content.active { display: block; }
+
+    .dice-box { background: linear-gradient(135deg, #e0e7ff 0%, #f5f3ff 100%); border: 2px dashed #a5b4fc; border-radius: var(--radius-lg); padding: 28px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .dice-btn { font-size: 1.2rem; padding: 16px 32px; border-radius: 50px; box-shadow: var(--shadow-md); transition: transform 0.2s, box-shadow 0.2s; }
+    .dice-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .dice-btn:active { transform: translateY(1px); }
+
+    .quiz-container { display: flex; flex-direction: column; gap: 16px; }
+    .progress-bar { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+    .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+    .quiz-options { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+    .quiz-opt-btn { width: 100%; padding: 12px 16px; text-align: left; background: #fff; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .quiz-opt-btn:hover { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+
+    .result-card { background: #ffffff; border: 2px solid var(--primary); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-lg); animation: slideUp 0.3s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .result-title { font-size: 1.3rem; font-weight: 800; color: var(--text-main); }
+    .status-badge { font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; }
+    .status-open { background: var(--success-light); color: var(--success); }
+    
+    .info-list { display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem; color: var(--text-muted); margin-bottom: 16px; }
+    .info-item { display: flex; gap: 8px; align-items: flex-start; }
+    .info-item strong { color: var(--text-main); min-width: 80px; }
+
+    .weekly-hours-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px 12px; background: #f8fafc; padding: 10px; border-radius: var(--radius-md); border: 1px solid var(--border-color); font-size: 0.85rem; }
+    @media (max-width: 480px) { .weekly-hours-grid { grid-template-columns: 1fr; } }
+    .weekly-hours-item { display: flex; justify-content: space-between; }
+
+    .modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 100; }
+    .modal-overlay.active { display: flex; }
+    .modal-box { background: #fff; border-radius: var(--radius-lg); padding: 24px; width: 90%; max-width: 400px; box-shadow: var(--shadow-lg); text-align: center; display: flex; flex-direction: column; gap: 16px; }
+
+    footer { border-top: 2px dashed var(--border-color); padding-top: 20px; margin-top: 10px; }
+    .blacklist-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .blacklist-chip { background: var(--danger-light); color: var(--danger); padding: 4px 10px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; }
+    .blacklist-chip button { background: none; border: none; color: var(--danger); cursor: pointer; font-weight: bold; font-size: 1rem; line-height: 1; }
+
+    .empty-state { text-align: center; color: var(--text-muted); padding: 30px 10px; font-size: 0.95rem; }
+  </style>
+</head>
+<body>
+
+<div class="app-container">
+  
+  <header>
+    <h1>等一下要吃什麼？</h1>
+    <p>擺脫選擇焦慮！智慧條件過濾與精準美食決策</p>
+  </header>
+
+  <!-- 條件篩選面板 -->
+  <section class="card">
+    <div class="card-title">⚙️ 篩選與用餐條件</div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>您的位置</label>
+        <div style="display: flex; gap: 8px;">
+          <input type="text" id="input-location" placeholder="點擊按鈕或輸入地址..." value="逢甲夜市商圈">
+          <button class="btn btn-secondary btn-sm" onclick="getLocation()" style="white-space: nowrap;">📍 存取定位</button>
+        </div>
+        <span id="location-status" style="font-size:0.75rem; color:var(--text-muted);"></span>
+      </div>
+
+      <div class="form-group">
+        <label for="select-transit">交通方式</label>
+        <select id="select-transit">
+          <option value="walk">🚶 步行</option>
+          <option value="scooter" selected>🛵 騎車</option>
+          <option value="car">🚗 開車</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>最大車程時間: <span id="val-max-time" style="color:var(--primary); font-weight:bold;">25</span> 分鐘</label>
+        <input type="range" id="input-max-time" min="3" max="45" value="25" oninput="document.getElementById('val-max-time').innerText = this.value">
+      </div>
+
+      <div class="form-group">
+        <label for="input-min-price">最低預算 (\$)</label>
+        <input type="number" id="input-min-price" value="0" step="50" min="0">
+      </div>
+      <div class="form-group">
+        <label for="input-max-price">最高預算 (\$)</label>
+        <input type="number" id="input-max-price" value="600" step="50" min="50">
+      </div>
+
+      <div class="form-group full">
+        <label for="input-meal-time">預計用餐時間</label>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <input type="time" id="input-meal-time" style="flex:1;">
+          <label style="display:flex; align-items:center; gap:4px; font-weight:normal; cursor:pointer; white-space:nowrap;">
+            <input type="checkbox" id="check-time-filter" checked> 僅顯示營業中
+          </label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 模式切換 Tabs -->
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="switchTab('random')">❶ 隨機推薦盲盒</button>
+    <button class="tab-btn" onclick="switchTab('direct')">❷ 我想吃……</button>
+  </nav>
+
+  <!-- 模式一面板：隨機推薦 -->
+  <main id="tab-random" class="tab-content active">
+    <div class="card" style="display: flex; flex-direction: column; gap: 16px;">
+      <div class="dice-box">
+        <div style="font-size: 2.8rem; line-height:1;">🎲</div>
+        <div style="font-weight: 700; color: var(--text-main); font-size:1.1rem;">不知道吃什麼？讓命運來決定！</div>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">按下骰子，將立刻推薦符合您條件的餐廳</p>
+        <button class="btn btn-primary dice-btn" onclick="rollDiceRandom()">🎲 骰出今天吃什麼！</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- 模式二面板：我想吃…… -->
+  <main id="tab-direct" class="tab-content">
+    <div class="card" style="display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: flex; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; gap: 16px;">
+        <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <input type="radio" name="submode" value="ideas" checked onclick="switchSubMode('ideas')"> <strong>💡 我有想法（關鍵字搜尋）</strong>
+        </label>
+        <label style="cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <input type="radio" name="submode" value="quiz" onclick="switchSubMode('quiz')"> <strong>❓ 不知道吃什麼（測驗問答）</strong>
+        </label>
+      </div>
+
+      <!-- 子模式 A：關鍵字搜尋 -->
+      <div id="submode-ideas">
+        <div class="form-group">
+          <label for="input-keywords">輸入想吃的類別或關鍵字（空格區隔，例如：拉麵 湯頭 平價）</label>
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <input type="text" id="input-keywords" placeholder="搜尋：火鍋 / 義大利麵 / 外帶 / 辣...">
+            <button class="btn btn-primary" onclick="searchByKeywords()">🤖 搜尋建議</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 子模式 B：測驗 -->
+      <div id="submode-quiz" class="quiz-container" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--primary);" id="quiz-step-text">問題 1 / 5</span>
+          <button class="btn btn-secondary btn-sm" onclick="startQuiz()">🔄 重新測驗</button>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="quiz-progress"></div></div>
+        <div style="font-weight: 700; font-size: 1.05rem;" id="quiz-question-title">題目載入中...</div>
+        <div class="quiz-options" id="quiz-options-container"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 輸出卡片容器 -->
+  <section id="landmark-output-section" style="display: none;"></section>
+
+  <!-- 頁尾黑名單管理區 -->
+  <footer>
+    <div class="card">
+      <div class="card-title" style="color: var(--danger);">🚫 店家黑名單管理</div>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px;">加入黑名單的店家將不會出現在未來的推薦名單中。</p>
+      
+      <div class="form-group">
+        <div style="display: flex; gap: 8px;">
+          <select id="select-blacklist-add">
+            <option value="">-- 請選擇地標/店家新增至黑名單 --</option>
+          </select>
+          <button class="btn btn-danger btn-sm" onclick="addSelectedToBlacklist()" style="white-space: nowrap;">新增黑名單</button>
+        </div>
+      </div>
+
+      <div class="blacklist-chips" id="blacklist-chips-container"></div>
+    </div>
+  </footer>
+
+</div>
+
+<!-- 不想吃 Modal -->
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal-box">
+    <div style="font-size: 1.2rem; font-weight: 700;">確定不想吃這家嗎？</div>
+    <p style="font-size: 0.9rem; color: var(--text-muted);">您可以選擇試試下一個推薦，或直接將此店家永久加入黑名單。</p>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <button class="btn btn-secondary" onclick="rejectAction('next')">🔄 ① 下一個餐廳</button>
+      <button class="btn btn-danger" onclick="rejectAction('blacklist')">🚫 ② 加入黑名單並換下一家</button>
+      <button class="btn btn-sm" style="background:none; color:var(--text-muted);" onclick="closeRejectModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== 1. 豐富內建店家資料庫 (共 30 間多樣化店家) =====
+const MOCK_RESTAURANTS = [
+  {
+    id: "r1", name: "隱家拉麵 (逢甲店)", categories: ["日式", "拉麵", "湯麵"],
+    keywords: ["濃郁豚骨", "炙燒叉燒", "免費加麵", "熱湯"], minPrice: 200, maxPrice: 320,
+    timeWalk: 8, timeScooter: 3, timeCar: 5, address: "台中市西屯區文華路100號", phone: "04-24510000", line: "@yinjiaramen",
+    hours: { 1: ["11:30","22:00"], 2: ["11:30","22:00"], 3: ["11:30","22:00"], 4: ["11:30","22:00"], 5: ["11:30","22:30"], 6: ["11:30","22:30"], 0: ["11:30","22:00"] },
+    takeout: true, dineIn: true, delivery: false, orderUrl: "https://example.com/order/yinjia", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=隱家拉麵逢甲店"
+  },
+  {
+    id: "r2", name: "輕井澤鍋物 (文心店)", categories: ["火鍋", "湯類", "台式"],
+    keywords: ["個人獨享鍋", "紅茶喝到飽", "環境氣派", "熱湯", "蔬菜盤"], minPrice: 300, maxPrice: 600,
+    timeWalk: 35, timeScooter: 10, timeCar: 12, address: "台中市南屯區文心路一段536號", phone: "04-23109681", line: "@karuisawa",
+    hours: { 1: ["11:00","02:00"], 2: ["11:00","02:00"], 3: ["11:00","02:00"], 4: ["11:00","02:00"], 5: ["11:00","02:00"], 6: ["11:00","02:00"], 0: ["11:00","02:00"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://example.com/order/karuisawa", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=輕井澤鍋物文心店"
+  },
+  {
+    id: "r3", name: "梁社漢排骨 (河南店)", categories: ["便當", "台式", "快餐", "乾食"],
+    keywords: ["炸排骨", "滷雞腿", "出菜快速", "平價日常"], minPrice: 95, maxPrice: 160,
+    timeWalk: 12, timeScooter: 4, timeCar: 6, address: "台中市西屯區河南路二段321號", phone: "04-24528899", line: "未提供",
+    hours: { 1: ["10:30","20:30"], 2: ["10:30","20:30"], 3: ["10:30","20:30"], 4: ["10:30","20:30"], 5: ["10:30","20:30"], 6: ["10:30","20:30"], 0: ["10:30","20:30"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://example.com/order/liangshehan", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=梁社漢排骨河南店"
+  },
+  {
+    id: "r4", name: "薩莉亞義式餐飲 (老虎城店)", categories: ["義式", "披薩", "燉飯", "義大利麵", "乾食"],
+    keywords: ["極致平價", "飲料吧暢飲", "家庭聚餐", "起司披薩"], minPrice: 120, maxPrice: 280,
+    timeWalk: 25, timeScooter: 8, timeCar: 10, address: "台中市西屯區河南路三段120號B1", phone: "04-36062530", line: "未提供",
+    hours: { 1: ["11:00","22:00"], 2: ["11:00","22:00"], 3: ["11:00","22:00"], 4: ["11:00","22:00"], 5: ["11:00","22:30"], 6: ["11:00","22:30"], 0: ["11:00","22:00"] },
+    takeout: true, dineIn: true, delivery: false, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=薩莉亞老虎城店"
+  },
+  {
+    id: "r5", name: "泰香米泰國料理", categories: ["泰式", "異國", "合菜"],
+    keywords: ["打拋豬", "酸辣海鮮湯", "椒麻雞", "重口味酸辣", "熱湯"], minPrice: 250, maxPrice: 500,
+    timeWalk: 18, timeScooter: 6, timeCar: 8, address: "台中市西屯區西屯路二段280號", phone: "04-24513322", line: "@thaismile",
+    hours: { 1: ["00:00","00:00"], 2: ["11:30","21:00"], 3: ["11:30","21:00"], 4: ["11:30","21:00"], 5: ["11:30","21:30"], 6: ["11:30","21:30"], 0: ["11:30","21:00"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://example.com/order/thaismile", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=泰香米泰國料理"
+  },
+  {
+    id: "r6", name: "永和豆漿大王 (西屯店)", categories: ["宵夜", "早餐", "台式", "乾食"],
+    keywords: ["燒餅油條", "小籠湯包", "冰豆漿", "深夜美食"], minPrice: 40, maxPrice: 120,
+    timeWalk: 10, timeScooter: 3, timeCar: 4, address: "台中市西屯區西屯路二段105號", phone: "04-23125566", line: "未提供",
+    hours: { 1: ["18:00","10:30"], 2: ["18:00","10:30"], 3: ["18:00","10:30"], 4: ["18:00","10:30"], 5: ["18:00","10:30"], 6: ["18:00","10:30"], 0: ["18:00","10:30"] },
+    takeout: true, dineIn: true, delivery: false, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=永和豆漿大王西屯店"
+  },
+  {
+    id: "r7", name: "肯德基 KFC (台中福星店)", categories: ["美式", "快餐", "炸雞", "乾食"],
+    keywords: ["喀啦炸雞", "原味蛋撻", "紙包雞", "快速得來速"], minPrice: 110, maxPrice: 260,
+    timeWalk: 5, timeScooter: 2, timeCar: 3, address: "台中市西屯區福星路427號", phone: "04-24512233", line: "未提供",
+    hours: { 1: ["07:00","00:00"], 2: ["07:00","00:00"], 3: ["07:00","00:00"], 4: ["07:00","00:00"], 5: ["07:00","01:00"], 6: ["07:00","01:00"], 0: ["07:00","00:00"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://www.kfcclub.com.tw/", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=肯德基台中福星店"
+  },
+  {
+    id: "r8", name: "健康綠蔬舒肥便當", categories: ["健康餐", "輕食", "便當", "乾食"],
+    keywords: ["舒肥雞胸", "紫米飯", "低卡低油", "清爽無負擔"], minPrice: 130, maxPrice: 190,
+    timeWalk: 15, timeScooter: 5, timeCar: 7, address: "台中市西屯區逢甲路88號", phone: "04-24521100", line: "@greenbox",
+    hours: { 1: ["11:00","19:30"], 2: ["11:00","19:30"], 3: ["11:00","19:30"], 4: ["11:00","19:30"], 5: ["11:00","19:30"], 6: ["11:00","14:00"], 0: ["00:00","00:00"] },
+    takeout: true, dineIn: false, delivery: true, orderUrl: "https://example.com/order/greenbox", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=健康綠蔬舒肥便當"
+  },
+  {
+    id: "r9", name: "官芝霖大腸包小腸 (逢甲夜市)", categories: ["台式", "小吃", "乾食"],
+    keywords: ["大腸包小腸", "蒜味辣椒", "排隊名店", "夜市小吃"], minPrice: 65, maxPrice: 100,
+    timeWalk: 3, timeScooter: 2, timeCar: 5, address: "台中市西屯區逢甲路20號前", phone: "0912-345678", line: "未提供",
+    hours: { 1: ["15:00","00:00"], 2: ["15:00","00:00"], 3: ["15:00","00:00"], 4: ["15:00","00:00"], 5: ["15:00","01:00"], 6: ["15:00","01:00"], 0: ["15:00","00:00"] },
+    takeout: true, dineIn: false, delivery: false, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=官芝霖大腸包小腸逢甲夜市"
+  },
+  {
+    id: "r10", name: "刁民酸菜魚 (逢甲店)", categories: ["川菜", "火鍋", "湯類"],
+    keywords: ["秘製酸菜魚", "初戀番茄魚", "宵夜熱搜", "酸辣爽口", "熱湯"], minPrice: 350, maxPrice: 650,
+    timeWalk: 6, timeScooter: 2, timeCar: 4, address: "台中市西屯區福星路459號", phone: "04-24522999", line: "@diaomin",
+    hours: { 1: ["11:30","02:00"], 2: ["11:30","02:00"], 3: ["11:30","02:00"], 4: ["11:30","02:00"], 5: ["11:30","02:00"], 6: ["11:30","02:00"], 0: ["11:30","02:00"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://example.com/order/diaomin", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=刁民酸菜魚逢甲店"
+  },
+  {
+    id: "r11", name: "朴大哥的韓式炸雞 (逢甲店)", categories: ["韓式", "炸雞", "宵夜", "乾食"],
+    keywords: ["招牌黑醬炸雞", "韓國起司拉麵", "韓式燒酒", "深夜炸雞"], minPrice: 200, maxPrice: 450,
+    timeWalk: 10, timeScooter: 4, timeCar: 6, address: "台中市西屯區逢甲路20巷28弄1號", phone: "04-24521230", line: "@parksgang",
+    hours: { 1: ["17:00","01:30"], 2: ["17:00","01:30"], 3: ["00:00","00:00"], 4: ["17:00","01:30"], 5: ["17:00","02:00"], 6: ["17:00","02:00"], 0: ["17:00","01:30"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://example.com/order/parksgang", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=朴大哥的韓式炸雞逢甲店"
+  },
+  {
+    id: "r12", name: "羨在 Enjoyyourday (早午餐/咖哩)", categories: ["咖哩", "早午餐", "日式"],
+    keywords: ["牛肉南瓜咖哩", "鮮蝦咖哩", "日式洋食", "網美早午餐"], minPrice: 180, maxPrice: 320,
+    timeWalk: 14, timeScooter: 5, timeCar: 7, address: "台中市西屯區文華路162巷12號", phone: "04-24528080", line: "@enjoyyourday",
+    hours: { 1: ["10:30","19:00"], 2: ["10:30","19:00"], 3: ["10:30","19:00"], 4: ["10:30","19:00"], 5: ["10:30","19:00"], 6: ["10:00","20:00"], 0: ["00:00","00:00"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://example.com/order/enjoyyourday", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=羨在Enjoyyourday"
+  },
+  {
+    id: "r13", name: "八方雲集 (逢甲福星店)", categories: ["小吃", "台式", "乾食"],
+    keywords: ["招牌鍋貼", "鮮肉水餃", "酸辣湯", "平價快速"], minPrice: 70, maxPrice: 150,
+    timeWalk: 4, timeScooter: 2, timeCar: 3, address: "台中市西屯區福星路311號", phone: "04-24526677", line: "未提供",
+    hours: { 1: ["10:30","21:30"], 2: ["10:30","21:30"], 3: ["10:30","21:30"], 4: ["10:30","21:30"], 5: ["10:30","21:30"], 6: ["10:30","21:30"], 0: ["10:30","21:30"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://www.bafang.com.tw/", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=八方雲集逢甲福星店"
+  },
+  {
+    id: "r14", name: "六扇門時尚湯鍋 (逢甲店)", categories: ["火鍋", "湯類", "台式"],
+    keywords: ["百元小火鍋", "白飯冰淇淋吃到飽", "熱湯", "小資首選"], minPrice: 160, maxPrice: 250,
+    timeWalk: 7, timeScooter: 3, timeCar: 4, address: "台中市西屯區福星路567號", phone: "04-24520033", line: "未提供",
+    hours: { 1: ["11:00","00:00"], 2: ["11:00","00:00"], 3: ["11:00","00:00"], 4: ["11:00","00:00"], 5: ["11:00","00:00"], 6: ["11:00","00:00"], 0: ["11:00","00:00"] },
+    takeout: true, dineIn: true, delivery: false, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=六扇門時尚湯鍋逢甲店"
+  },
+  {
+    id: "r15", name: "麥當勞 (逢甲餐廳)", categories: ["美式", "快餐", "炸雞", "乾食"],
+    keywords: ["大麥克", "薯條", "麥克鷄塊", "24小時營業"], minPrice: 90, maxPrice: 220,
+    timeWalk: 2, timeScooter: 1, timeCar: 2, address: "台中市西屯區福星路427號", phone: "04-24511111", line: "未提供",
+    hours: { 1: ["00:00","23:59"], 2: ["00:00","23:59"], 3: ["00:00","23:59"], 4: ["00:00","23:59"], 5: ["00:00","23:59"], 6: ["00:00","23:59"], 0: ["00:00","23:59"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://www.mcdonalds.com/tw/zh-tw.html", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=麥當勞逢甲餐廳"
+  },
+  {
+    id: "r16", name: "屋馬燒肉 (國安店)", categories: ["燒肉", "日式", "乾食"],
+    keywords: ["極致燒肉", "雞湯喝到飽", "慶生聚餐", "專人服務"], minPrice: 800, maxPrice: 2000,
+    timeWalk: 45, timeScooter: 12, timeCar: 15, address: "台中市西屯區國安一路168號", phone: "04-24652222", line: "@umai",
+    hours: { 1: ["11:00","00:00"], 2: ["11:00","00:00"], 3: ["11:00","00:00"], 4: ["11:00","00:00"], 5: ["11:00","00:00"], 6: ["11:00","00:00"], 0: ["11:00","00:00"] },
+    takeout: true, dineIn: true, delivery: false, orderUrl: "https://example.com/order/umai", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=屋馬燒肉國安店"
+  },
+  {
+    id: "r17", name: "咖哩厚 Curryhood (台中逢甲店)", categories: ["咖哩", "日式", "乾食"],
+    keywords: ["茶咖哩", "唐揚雞咖哩", "日式簡餐", "質感濃郁"], minPrice: 190, maxPrice: 300,
+    timeWalk: 9, timeScooter: 3, timeCar: 5, address: "台中市西屯區河南路二段241巷10號", phone: "04-24521599", line: "@curryhood",
+    hours: { 1: ["11:30","20:30"], 2: ["11:30","20:30"], 3: ["11:30","20:30"], 4: ["11:30","20:30"], 5: ["11:30","20:30"], 6: ["11:30","20:30"], 0: ["00:00","00:00"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://example.com/order/curryhood", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=咖哩厚逢甲店"
+  },
+  {
+    id: "r18", name: "素味平生蔬食館", categories: ["蔬食", "素食", "健康餐", "乾食"],
+    keywords: ["素食便當", "麻油猴頭菇", "清爽健康", "全素蛋奶素"], minPrice: 100, maxPrice: 200,
+    timeWalk: 11, timeScooter: 4, timeCar: 6, address: "台中市西屯區青海路二段200號", phone: "04-24519988", line: "未提供",
+    hours: { 1: ["11:00","14:00"], 2: ["11:00","20:00"], 3: ["11:00","20:00"], 4: ["11:00","20:00"], 5: ["11:00","20:00"], 6: ["11:00","20:00"], 0: ["00:00","00:00"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=素味平生蔬食館"
+  },
+  {
+    id: "r19", name: "逢甲惡魔雞排 / 霜江茶行", categories: ["小吃", "炸物", "乾食"],
+    keywords: ["惡魔雞排", "手搖飲料", "邊走邊吃", "平價宵夜"], minPrice: 80, maxPrice: 160,
+    timeWalk: 3, timeScooter: 1, timeCar: 3, address: "台中市西屯區福星路400號", phone: "04-24523311", line: "未提供",
+    hours: { 1: ["12:00","23:30"], 2: ["12:00","23:30"], 3: ["12:00","23:30"], 4: ["12:00","23:30"], 5: ["12:00","00:30"], 6: ["12:00","00:30"], 0: ["12:00","23:30"] },
+    takeout: true, dineIn: false, delivery: true, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=逢甲惡魔雞排"
+  },
+  {
+    id: "r20", name: "鼎王麻辣鍋 (精誠店)", categories: ["火鍋", "麻辣", "湯類"],
+    keywords: ["鴨血豆腐吃到飽", "酸菜白肉鍋", "尊榮服務", "熱湯"], minPrice: 500, maxPrice: 1000,
+    timeWalk: 50, timeScooter: 15, timeCar: 18, address: "台中市西區精誠路12號", phone: "04-23298467", line: "@tripodking",
+    hours: { 1: ["11:30","03:00"], 2: ["11:30","03:00"], 3: ["11:30","03:00"], 4: ["11:30","03:00"], 5: ["11:30","03:00"], 6: ["11:30","03:00"], 0: ["11:30","03:00"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://example.com/order/tripodking", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=鼎王麻辣鍋精誠店"
+  },
+  {
+    id: "r21", name: "大心新泰式麵食 (勤美店)", categories: ["泰式", "湯麵", "異國"],
+    keywords: ["酸辣海鮮麵", "泰式奶茶", "黑火山霜淇淋", "熱湯"], minPrice: 220, maxPrice: 380,
+    timeWalk: 40, timeScooter: 12, timeCar: 15, address: "台中市西區公益路68號B1", phone: "04-23108888", line: "未提供",
+    hours: { 1: ["11:00","21:30"], 2: ["11:00","21:30"], 3: ["11:00","21:30"], 4: ["11:00","21:30"], 5: ["11:00","22:00"], 6: ["11:00","22:00"], 0: ["11:00","21:30"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://example.com/order/verythai", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=大心新泰式麵食勤美店"
+  },
+  {
+    id: "r22", name: "吃這 炭火土司 (逢甲店)", categories: ["早午餐", "輕食", "乾食"],
+    keywords: ["炭烤土司", "爆漿起司蛋", "古早味紅茶", "平價美味"], minPrice: 60, maxPrice: 140,
+    timeWalk: 6, timeScooter: 2, timeCar: 4, address: "台中市西屯區西屯路二段270號", phone: "04-24510011", line: "未提供",
+    hours: { 1: ["06:30","13:30"], 2: ["06:30","13:30"], 3: ["06:30","13:30"], 4: ["06:30","13:30"], 5: ["06:30","13:30"], 6: ["07:00","14:00"], 0: ["07:00","14:00"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=吃這炭火土司逢甲"
+  },
+  {
+    id: "r23", name: "赤鬼牛排 (台灣大道店)", categories: ["排餐", "台式", "乾食"],
+    keywords: ["炙燒牛排", "蒸蛋湯品吃到飽", "經典台式牛排"], minPrice: 320, maxPrice: 600,
+    timeWalk: 30, timeScooter: 8, timeCar: 10, address: "台中市西屯區台灣大道三段320號", phone: "04-24527272", line: "未提供",
+    hours: { 1: ["11:00","22:30"], 2: ["11:00","22:30"], 3: ["11:00","22:30"], 4: ["11:00","22:30"], 5: ["11:00","22:30"], 6: ["11:00","23:00"], 0: ["11:00","22:30"] },
+    takeout: true, dineIn: true, delivery: false, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=赤鬼牛排台灣大道店"
+  },
+  {
+    id: "r24", name: "明倫蛋餅 (逢甲二店)", categories: ["小吃", "台式", "乾食"],
+    keywords: ["蔥花蛋餅", "甜辣醬", "古早味麵糊", "銅板美食"], minPrice: 50, maxPrice: 100,
+    timeWalk: 2, timeScooter: 1, timeCar: 2, address: "台中市西屯區福星路546號", phone: "0915-000111", line: "未提供",
+    hours: { 1: ["15:00","01:00"], 2: ["15:00","01:00"], 3: ["15:00","01:00"], 4: ["15:00","01:00"], 5: ["15:00","01:30"], 6: ["15:00","01:30"], 0: ["15:00","01:00"] },
+    takeout: true, dineIn: false, delivery: false, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=明倫蛋餅逢甲二店"
+  },
+  {
+    id: "r25", name: "勝博殿日式豬排 (大遠百店)", categories: ["日式", "定食", "乾食"],
+    keywords: ["炸豬排", "高麗菜絲吃到飽", "日式米飯", "精緻定食"], minPrice: 350, maxPrice: 550,
+    timeWalk: 22, timeScooter: 7, timeCar: 9, address: "台中市西屯區台灣大道三段251號11F", phone: "04-22582578", line: "未提供",
+    hours: { 1: ["11:00","22:00"], 2: ["11:00","22:00"], 3: ["11:00","22:00"], 4: ["11:00","22:00"], 5: ["11:00","22:00"], 6: ["10:30","22:00"], 0: ["10:30","22:00"] },
+    takeout: true, dineIn: true, delivery: false, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=勝博殿台中大遠百店"
+  },
+  {
+    id: "r26", name: "溫州大餛飩 (逢甲店)", categories: ["小吃", "湯麵", "台式"],
+    keywords: ["鮮肉大餛飩", "紅油抄手", "榨菜肉絲麵", "熱湯"], minPrice: 75, maxPrice: 140,
+    timeWalk: 5, timeScooter: 2, timeCar: 3, address: "台中市西屯區逢甲路45號", phone: "04-24513300", line: "未提供",
+    hours: { 1: ["11:00","21:30"], 2: ["11:00","21:30"], 3: ["11:00","21:30"], 4: ["11:00","21:30"], 5: ["11:00","21:30"], 6: ["11:00","21:30"], 0: ["11:00","21:30"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=溫州大餛飩逢甲店"
+  },
+  {
+    id: "r27", name: "老井極上燒肉 (中科店)", categories: ["燒肉", "日式", "乾食"],
+    keywords: ["頂級和牛", "海鮮粥", "精緻代烤", "商務聚餐"], minPrice: 900, maxPrice: 2200,
+    timeWalk: 50, timeScooter: 13, timeCar: 16, address: "台中市西屯區西屯路三段257號", phone: "04-24619888", line: "@laojing",
+    hours: { 1: ["11:00","00:00"], 2: ["11:00","00:00"], 3: ["11:00","00:00"], 4: ["11:00","00:00"], 5: ["11:00","00:00"], 6: ["11:00","00:00"], 0: ["11:00","00:00"] },
+    takeout: true, dineIn: true, delivery: false, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=老井極上燒肉中科店"
+  },
+  {
+    id: "r28", name: "大呼過癮 (逢甲店)", categories: ["火鍋", "湯類", "台式"],
+    keywords: ["平價小火鍋", "冰淇淋飲料免費", "熱湯", "經濟實惠"], minPrice: 150, maxPrice: 220,
+    timeWalk: 8, timeScooter: 3, timeCar: 4, address: "台中市西屯區福星路610號", phone: "04-24520909", line: "未提供",
+    hours: { 1: ["11:00","23:30"], 2: ["11:00","23:30"], 3: ["11:00","23:30"], 4: ["11:00","23:30"], 5: ["11:00","23:30"], 6: ["11:00","23:30"], 0: ["11:00","23:30"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=大呼過癮逢甲店"
+  },
+  {
+    id: "r29", name: "築間幸福鍋物 (逢甲店)", categories: ["火鍋", "湯類", "台式"],
+    keywords: ["自助蔬菜吧吃到飽", "石頭湯底", "新鮮海鮮", "熱湯"], minPrice: 380, maxPrice: 800,
+    timeWalk: 10, timeScooter: 3, timeCar: 5, address: "台中市西屯區逢甲路173號", phone: "04-24511388", line: "@jhujian",
+    hours: { 1: ["11:00","04:00"], 2: ["11:00","04:00"], 3: ["11:00","04:00"], 4: ["11:00","04:00"], 5: ["11:00","04:00"], 6: ["11:00","04:00"], 0: ["11:00","04:00"] },
+    takeout: true, dineIn: true, delivery: true, orderUrl: "https://example.com/order/jhujian", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=築間幸福鍋物逢甲店"
+  },
+  {
+    id: "r30", name: "壽司郎 Sushiro (福科路店)", categories: ["日式", "壽司", "乾食"],
+    keywords: ["迴轉壽司", "鮭魚三貫", "拉麵甜點", "平價美味"], minPrice: 200, maxPrice: 500,
+    timeWalk: 35, timeScooter: 9, timeCar: 11, address: "台中市西屯區福科路201號", phone: "04-24622255", line: "未提供",
+    hours: { 1: ["11:00","22:30"], 2: ["11:00","22:30"], 3: ["11:00","22:30"], 4: ["11:00","22:30"], 5: ["11:00","22:30"], 6: ["10:30","22:30"], 0: ["10:30","22:30"] },
+    takeout: true, dineIn: true, delivery: false, orderUrl: "", googleMapUrl: "https://www.google.com/maps/search/?api=1&query=壽司郎福科路店"
+  }
+];
+
+// ===== 2. 隨機題目庫 =====
+const QUESTION_POOL = [
+  {
+    id: "soup_or_dry",
+    title: "1. 今天體感或心情，想吃熱呼呼的湯還是乾食？",
+    options: [
+      { text: "🥣 熱騰騰的湯品 / 火鍋 / 湯麵", hardFilter: "soup", tags: ["湯麵", "火鍋", "湯類", "熱湯"] },
+      { text: "🍱 乾爽的便當 / 乾麵 / 披薩 / 炸雞 / 燒肉", hardFilter: "dry", tags: ["便當", "乾食", "披薩", "快餐", "燒肉"] }
+    ]
+  },
+  {
+    id: "flavor",
+    title: "2. 今天偏好的口味重輕？",
+    options: [
+      { text: "🌶️ 濃郁重口味（麻辣、泰式、濃豚骨、炸雞）", tags: ["泰式", "濃郁豚骨", "重口味酸辣", "炸雞", "麻辣"] },
+      { text: "🥗 清爽原味（健康餐、輕食、蔬食）", tags: ["健康餐", "輕食", "低卡低油", "蔬食"] }
+    ]
+  },
+  {
+    id: "pace",
+    title: "3. 用餐時間與用餐節奏？",
+    options: [
+      { text: "⚡ 趕時間！想快速解決（快餐/便當/得來速）", tags: ["快餐", "便當", "出菜快速", "小吃"] },
+      { text: "🪑 充裕，想坐著慢慢享用（餐廳/火鍋/合菜/燒肉）", tags: ["火鍋", "環境氣派", "家庭聚餐", "燒肉"] }
+    ]
+  },
+  {
+    id: "style",
+    title: "4. 是否有特定異國風情偏好？",
+    options: [
+      { text: "⛩️ 日式 / 韓式 / 泰式異國風味", tags: ["日式", "泰式", "韓式"] },
+      { text: "🍕 歐美義式 / 台式在地風味", tags: ["義式", "台式", "美式"] }
+    ]
+  },
+  {
+    id: "budget_pref",
+    title: "5. 今日預算期待？",
+    options: [
+      { text: "🪙 節省平價日常小吃 ($150以內)", tags: ["平價日常", "極致平價", "小吃"] },
+      { text: "✨ 稍微犒賞自己一下 ($200以上)", tags: ["個人獨享鍋", "合菜", "燒肉"] }
+    ]
+  }
+];
+
+// ===== 3. 全域狀態 =====
+let blacklist = JSON.parse(localStorage.getItem('eat_blacklist') || '[]');
+let currentCandidates = [];
+let currentCandidateIndex = 0;
+
+let currentQuizQuestions = [];
+let currentQuizIndex = 0;
+let quizHardFilter = null;
+let quizSelectedTags = [];
+
+// ===== 4. 初始化 =====
+document.addEventListener("DOMContentLoaded", () => {
+  const now = new Date();
+  const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  document.getElementById("input-meal-time").value = timeString;
+
+  initBlacklistSelect();
+  renderBlacklistChips();
+});
+
+function getLocation() {
+  const status = document.getElementById("location-status");
+  if (!navigator.geolocation) {
+    status.innerText = "您的瀏覽器不支援地理定位";
+    return;
+  }
+  status.innerText = "定位中...";
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      status.innerText = "已成功取得當前 GPS 定位位置！";
+      document.getElementById("input-location").value = `當前位置 (${pos.coords.latitude.toFixed(3)}, ${pos.coords.longitude.toFixed(3)})`;
+    },
+    () => {
+      status.innerText = "無法取得定位，已切換為預設地點。";
+    }
+  );
+}
+
+// ===== 5. 轉換時間為分鐘數進行精準比對 =====
+function timeToMinutes(tStr) {
+  if (!tStr) return 0;
+  const parts = tStr.split(':');
+  return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+}
+
+function checkIsOpen(hoursObj, mealTimeStr, enableFilter) {
+  if (!enableFilter) return true; // 若關閉時間過濾，直接視為可選
+  if (!mealTimeStr) return true;
+  
+  const dayOfWeek = new Date().getDay();
+  const todayHours = hoursObj[dayOfWeek];
+  if (!todayHours) return false;
+  
+  const [openStr, closeStr] = todayHours;
+  if (openStr === "00:00" && closeStr === "00:00") return false; // 公休
+
+  const current = timeToMinutes(mealTimeStr);
+  const open = timeToMinutes(openStr);
+  let close = timeToMinutes(closeStr);
+
+  if (open <= close) {
+    return current >= open && current <= close;
+  } else {
+    // 跨夜 (如 18:00 - 02:00)
+    return current >= open || current <= close;
+  }
+}
+
+function getFilteredRestaurants() {
+  const transitMode = document.getElementById("select-transit").value;
+  const maxTime = parseInt(document.getElementById("input-max-time").value, 10);
+  const minPrice = parseInt(document.getElementById("input-min-price").value, 10) || 0;
+  const maxPrice = parseInt(document.getElementById("input-max-price").value, 10) || 9999;
+  const mealTime = document.getElementById("input-meal-time").value;
+  const enableTimeFilter = document.getElementById("check-time-filter").checked;
+
+  return MOCK_RESTAURANTS.filter(item => {
+    if (blacklist.includes(item.id)) return false;
+
+    let itemTime = item.timeScooter;
+    if (transitMode === "walk") itemTime = item.timeWalk;
+    if (transitMode === "car") itemTime = item.timeCar;
+    if (itemTime > maxTime) return false;
+
+    if (item.maxPrice < minPrice || item.minPrice > maxPrice) return false;
+
+    if (!checkIsOpen(item.hours, mealTime, enableTimeFilter)) return false;
+
+    return true;
+  });
+}
+
+// ===== 6. 模式一：隨機盲盒（骰子直出） =====
+function rollDiceRandom() {
+  const candidates = getFilteredRestaurants();
+  if (candidates.length === 0) {
+    renderLandmarkEmpty("沒有符合篩選條件的店家！請嘗試放寬車程時間、預算，或取消勾選「僅顯示營業中」。");
+    return;
+  }
+
+  currentCandidates = [...candidates].sort(() => Math.random() - 0.5);
+  currentCandidateIndex = 0;
+  renderCurrentCandidate();
+}
+
+// ===== 7. 模式二：搜尋與測驗 =====
+function switchSubMode(mode) {
+  document.getElementById("submode-ideas").style.display = (mode === 'ideas') ? 'block' : 'none';
+  document.getElementById("submode-quiz").style.display = (mode === 'quiz') ? 'flex' : 'none';
+  document.getElementById("landmark-output-section").style.display = "none";
+  if (mode === 'quiz') startQuiz();
+}
+
+function searchByKeywords() {
+  const input = document.getElementById("input-keywords").value.trim();
+  if (!input) { alert("請輸入關鍵字！"); return; }
+
+  const keywords = input.split(/\s+/);
+  const candidates = getFilteredRestaurants();
+
+  const scored = candidates.map(item => {
+    let score = 0;
+    keywords.forEach(kw => {
+      if (item.name.includes(kw)) score += 5;
+      if (item.categories.some(c => c.includes(kw))) score += 3;
+      if (item.keywords.some(k => k.includes(kw))) score += 2;
+    });
+    return { item, score };
+  }).filter(o => o.score > 0).sort((a,b) => b.score - a.score);
+
+  if (scored.length > 0) {
+    currentCandidates = scored.map(s => s.item);
+    currentCandidateIndex = 0;
+    renderCurrentCandidate();
+  } else {
+    renderLandmarkEmpty("未找到符合關鍵字的相關店家，請換個關鍵字或放寬條件！");
+  }
+}
+
+function startQuiz() {
+  currentQuizIndex = 0;
+  quizHardFilter = null;
+  quizSelectedTags = [];
+
+  const soupQuestion = QUESTION_POOL[0];
+  const otherQuestions = QUESTION_POOL.slice(1).sort(() => Math.random() - 0.5);
+  currentQuizQuestions = [soupQuestion, ...otherQuestions.slice(0, 4)];
+
+  renderQuizStep();
+}
+
+function renderQuizStep() {
+  const q = currentQuizQuestions[currentQuizIndex];
+  document.getElementById("quiz-step-text").innerText = `問題 ${currentQuizIndex + 1} / ${currentQuizQuestions.length}`;
+  document.getElementById("quiz-progress").style.width = `${((currentQuizIndex + 1) / currentQuizQuestions.length) * 100}%`;
+  document.getElementById("quiz-question-title").innerText = q.title;
+
+  const optionsContainer = document.getElementById("quiz-options-container");
+  optionsContainer.innerHTML = q.options.map((opt, idx) => `
+    <button class="quiz-opt-btn" onclick="selectQuizOption(${idx})">${opt.text}</button>
+  `).join('');
+}
+
+function selectQuizOption(optIdx) {
+  const q = currentQuizQuestions[currentQuizIndex];
+  const selectedOpt = q.options[optIdx];
+
+  if (selectedOpt.hardFilter) {
+    quizHardFilter = selectedOpt.hardFilter;
+  }
+  quizSelectedTags.push(...selectedOpt.tags);
+
+  currentQuizIndex++;
+  if (currentQuizIndex < currentQuizQuestions.length) {
+    renderQuizStep();
+  } else {
+    finishQuiz();
+  }
+}
+
+function finishQuiz() {
+  let candidates = getFilteredRestaurants();
+
+  if (quizHardFilter === 'soup') {
+    candidates = candidates.filter(item => 
+      item.categories.some(c => c.includes("湯") || c.includes("火鍋") || c.includes("拉麵")) ||
+      item.keywords.some(k => k.includes("湯") || k.includes("熱湯"))
+    );
+  } else if (quizHardFilter === 'dry') {
+    candidates = candidates.filter(item => 
+      item.categories.some(c => c.includes("便當") || c.includes("披薩") || c.includes("乾食") || c.includes("快餐") || c.includes("燒肉")) ||
+      !item.categories.includes("火鍋")
+    );
+  }
+
+  if (candidates.length === 0) {
+    renderLandmarkEmpty("沒有符合您測驗所有答案的店家，請嘗試重新測驗或放寬條件！");
+    return;
+  }
+
+  const scored = candidates.map(item => {
+    let score = 0;
+    quizSelectedTags.forEach(tag => {
+      if (item.categories.includes(tag)) score += 3;
+      if (item.keywords.includes(tag)) score += 2;
+    });
+    return { item, score };
+  }).sort((a,b) => b.score - a.score);
+
+  currentCandidates = scored.map(s => s.item);
+  currentCandidateIndex = 0;
+  renderCurrentCandidate();
+}
+
+function renderCurrentCandidate() {
+  if (currentCandidateIndex >= currentCandidates.length) {
+    renderLandmarkEmpty("沒有更多符合條件的推薦店家囉！可以嘗試放寬條件重新抽籤。");
+    return;
+  }
+  const item = currentCandidates[currentCandidateIndex];
+  renderLandmarkOutput(item);
+}
+
+// ===== 8. 輸出卡片渲染 =====
+function formatWeeklyHours(hoursObj) {
+  const dayMap = [
+    { key: 1, name: "星期一" }, { key: 2, name: "星期二" }, { key: 3, name: "星期三" },
+    { key: 4, name: "星期四" }, { key: 5, name: "星期五" }, { key: 6, name: "星期六" }, { key: 0, name: "星期日" }
+  ];
+
+  return dayMap.map(d => {
+    const h = hoursObj[d.key];
+    let timeText = "公休";
+    if (h && (h[0] !== "00:00" || h[1] !== "00:00")) {
+      timeText = `${h[0]} - ${h[1]}`;
+    }
+    return `
+      <div class="weekly-hours-item">
+        <span>${d.name}</span>
+        <strong>${timeText}</strong>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderLandmarkOutput(item) {
+  const outputSection = document.getElementById("landmark-output-section");
+  outputSection.style.display = "block";
+
+  outputSection.innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <div>
+          <div class="result-title">${item.name}</div>
+          <div style="font-size:0.85rem; color:var(--text-muted); margin-top:2px;">${item.categories.join(' · ')}</div>
+        </div>
+        <span class="status-badge status-open">推薦店家</span>
+      </div>
+
+      <div class="info-list">
+        <div class="info-item"><strong>📍 地址：</strong> <span>${item.address}</span></div>
+        <div class="info-item"><strong>📞 聯絡電話：</strong> <span>${item.phone}</span></div>
+        <div class="info-item"><strong>💬 LINE帳號：</strong> <span>${item.line}</span></div>
+        <div class="info-item"><strong>🍱 服務方式：</strong> <span>${item.dineIn ? '內用 ' : ''}${item.takeout ? '外帶 ' : ''}${item.delivery ? '外送' : ''}</span></div>
+        
+        <div class="info-item" style="flex-direction:column; gap:4px; margin-top:4px;">
+          <strong>🗓️ 一整週營業時間：</strong>
+          <div class="weekly-hours-grid" style="width:100%;">
+            ${formatWeeklyHours(item.hours)}
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 12px;">
+        <a href="${item.googleMapUrl}" target="_blank" class="btn btn-primary" style="flex:1; text-decoration:none;">🗺️ 開啟 Google 地圖導航</a>
+        ${item.orderUrl ? `<a href="\${item.orderUrl}" target="_blank" class="btn btn-secondary" style="text-decoration:none;">📱 線上點餐</a>` : '<button class="btn btn-secondary" disabled style="opacity:0.6;">無線上點餐</button>'}
+      </div>
+
+      <div style="display:flex; gap:10px; border-top:1px solid var(--border-color); padding-top:12px;">
+        <button class="btn btn-secondary" style="flex:1;" onclick="openRejectModal()">🙅 不想吃這家 (下一個 / 黑名單)</button>
+      </div>
+    </div>
+  `;
+
+  // 自動平滑捲動到結果輸出卡片
+  outputSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+function renderLandmarkEmpty(message) {
+  const outputSection = document.getElementById("landmark-output-section");
+  outputSection.style.display = "block";
+  outputSection.innerHTML = `
+    <div class="card empty-state">
+      <div style="font-size:2rem; margin-bottom:8px;">🔍</div>
+      <div>${message}</div>
+    </div>
+  `;
+  outputSection.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ===== 9. 按鈕動作與 Modal 互動 =====
+function openRejectModal() {
+  document.getElementById("reject-modal").classList.add("active");
+}
+
+function closeRejectModal() {
+  document.getElementById("reject-modal").classList.remove("active");
+}
+
+function rejectAction(type) {
+  closeRejectModal();
+
+  const currentItem = currentCandidates[currentCandidateIndex];
+  if (type === 'blacklist' && currentItem) {
+    addToBlacklist(currentItem.id);
+  }
+  
+  currentCandidateIndex++;
+  renderCurrentCandidate();
+}
+
+// ===== 10. 黑名單 localStorage 管理 =====
+function initBlacklistSelect() {
+  const select = document.getElementById("select-blacklist-add");
+  select.innerHTML = `<option value="">-- 請選擇地標/店家新增至黑名單 --</option>` + 
+    MOCK_RESTAURANTS.map(item => `<option value="${item.id}">${item.name}</option>`).join('');
+}
+
+function renderBlacklistChips() {
+  const container = document.getElementById("blacklist-chips-container");
+  if (blacklist.length === 0) {
+    container.innerHTML = `<span style="font-size:0.85rem; color:var(--text-muted);">目前黑名單為空</span>`;
+    return;
+  }
+
+  container.innerHTML = blacklist.map(id => {
+    const item = MOCK_RESTAURANTS.find(r => r.id === id);
+    const name = item ? item.name : id;
+    return `
+      <div class="blacklist-chip">
+        <span>${name}</span>
+        <button onclick="removeFromBlacklist('${id}')" title="移除黑名單">✕</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function addToBlacklist(id) {
+  if (!id) return;
+  if (!blacklist.includes(id)) {
+    blacklist.push(id);
+    localStorage.setItem('eat_blacklist', JSON.stringify(blacklist));
+    renderBlacklistChips();
+    alert("已成功將店家加入黑名單！");
+  }
+}
+
+function addSelectedToBlacklist() {
+  const select = document.getElementById("select-blacklist-add");
+  const val = select.value;
+  if (!val) { alert("請先選擇要新增的店家！"); return; }
+  addToBlacklist(val);
+  select.value = "";
+}
+
+function removeFromBlacklist(id) {
+  blacklist = blacklist.filter(item => item !== id);
+  localStorage.setItem('eat_blacklist', JSON.stringify(blacklist));
+  renderBlacklistChips();
+}
+
+function switchTab(tabKey) {
+  document.querySelectorAll(".tab-btn").forEach((btn, idx) => {
+    btn.classList.toggle("active", (idx === 0 && tabKey === 'random') || (idx === 1 && tabKey === 'direct'));
+  });
+  document.getElementById("tab-random").classList.toggle("active", tabKey === 'random');
+  document.getElementById("tab-direct").classList.toggle("active", tabKey === 'direct');
+  document.getElementById("landmark-output-section").style.display = "none";
+}
+</script>
+
+</body>
+</html>
